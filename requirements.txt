@@ -1,1 +1,8 @@
 qiskit==1.0.2
+qiskit-ibm-runtime==0.23.0
+cirq
+cirq_google
+qsimcirq
+matplotlib
+pylatexenc
+numpy

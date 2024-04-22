@@ -1,5 +1,6 @@
 qiskit==1.0.2
 qiskit-ibm-runtime==0.23.0
+qiskit_aer
 cirq
 cirq_google
 qsimcirq

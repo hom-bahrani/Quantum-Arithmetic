@@ -1,28 +1,38 @@
 import os
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Import Qiskit
+from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
-from qiskit.circuit import QuantumCircuit
-from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
-from qiskit_ibm_runtime import SamplerV2 as Sampler, QiskitRuntimeService
+from qiskit.visualization import plot_histogram, plot_state_city
+import qiskit.quantum_info as qi
 
-# Retrieve the IBM Quantum token from the environment variable
-token = os.getenv("IBM_QUANTUM_TOKEN")
-if not token:
-    raise ValueError("IBM_QUANTUM_TOKEN is not set in the environment variables")
+# Create circuit
+circ = QuantumCircuit(2)
+circ.h(0)
+circ.cx(0, 1)
+circ.measure_all()
 
-# Bell Circuit
-qc = QuantumCircuit(2)
-qc.h(0)
-qc.cx(0, 1)
-qc.measure_all()
+# Transpile for simulator
+simulator = AerSimulator()
+circ = transpile(circ, simulator)
 
-service = QiskitRuntimeService(channel="ibm_quantum", token=token)
+# Run and get counts
+result = simulator.run(circ).result()
+counts = result.get_counts(circ)
+plot_histogram(counts, title="Bell-State counts")
 
-# Specify a system to use for the noise model
-real_backend = service.backend("ibm_brisbane")
-aer = AerSimulator.from_backend(real_backend)
+if not os.path.exists("results"):
+    os.makedirs("results")
 
-# Run the sampler job locally using AerSimulator.
-pm = generate_preset_pass_manager(backend=aer, optimization_level=1)
-isa_qc = pm.run(qc)
-sampler = Sampler(backend=aer)
-result = sampler.run([isa_qc]).result()
+plt.figure()  # Create a new figure
+plt.bar(counts.keys(), counts.values())
+plt.xlabel("State")
+plt.ylabel("Counts")
+plt.title("Bell-State counts")
+
+# Save the histogram
+plt.savefig("results/bell_state_histogram.png")
+plt.close()  # Close the figure

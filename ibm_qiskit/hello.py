@@ -16,12 +16,12 @@ circ.cx(0, 1)
 circ.measure_all()
 
 # Transpile for simulator
-simulator = AerSimulator()
-circ = transpile(circ, simulator)
+shots = 10000
+simulator = AerSimulator(method="statevector")
 
-# Run and get counts
-result = simulator.run(circ).result()
-counts = result.get_counts(circ)
+job_statevector = simulator.run(circ, shots=shots)
+counts = job_statevector.result().get_counts(0)
+
 plot_histogram(counts, title="Bell-State counts")
 
 if not os.path.exists("results"):

@@ -33,24 +33,27 @@ def plot_histogram(counts, title="Histogram", figsize=(7, 5)):
 
 def prepare_circuit(a, b):
     """Prepare a quantum circuit to add two binary numbers a and b."""
-    n = 4  # number of qubits
-    qc = QuantumCircuit(n, n)  # create a circuit with 4 qubits and 4 classical bits
+    n = 8  # Total number of qubits required
+    m = 4  # Number of bits in each number
+    qc = QuantumCircuit(n, m)  # 8 qubits, 4 classical bits
 
     # Initialize the qubits based on the binary representation of the numbers
-    for i in range(n):
+    for i in range(m):  # m is 4, for the binary digits
         if a & (1 << i):
-            qc.x(i)
+            qc.x(i)  # Setting up the first number
         if b & (1 << i):
-            qc.x(n + i)
+            qc.x(m + i)  # Setting up the second number
 
     # Add the numbers using quantum gates
+    # Assuming adding logic here with appropriate qubit referencing
     qc.cx(0, 4)
-    for i in range(1, n):
-        qc.ccx(i, n + i, i + 1)
-        qc.cx(i, n + i)
+    for i in range(1, m):  # m - 1 because we are using 4 bits for each number
+        qc.ccx(i, m + i, i + 1)
+        qc.cx(i, m + i)
 
     qc.barrier()
-    qc.measure(range(n), range(n))
+    # Measuring only the first four qubits as they represent the sum
+    qc.measure(range(4), range(4))  # Output the result in the first 4 classical bits
     return qc
 
 

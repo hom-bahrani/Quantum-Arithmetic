@@ -32,9 +32,9 @@ The Google Cirq code only adds 1 + 1
 python3 google_cirq/main.py
 ```
 
-The IBM Qiskit code is implemented to add up different numbers that, are pass in as command line arguments.
+The IBM Qiskit code is implemented to add up different numbers which are pass in as command line arguments.
 
-There is currently a bug in the code (PR's welcome)
+There is currently a bug in the code (PR's welcome :smiley: )
 
 ```bash
 python3 ibm_qiskit/main.py 2 1

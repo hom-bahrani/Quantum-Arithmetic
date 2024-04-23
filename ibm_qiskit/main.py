@@ -36,30 +36,46 @@ def prepare_circuit(a, b):
     m = 4  # Number of bits in each number
     qc = QuantumCircuit(n, m)  # 8 qubits, 4 classical bits
 
-    # Prepare the quantum circuit to add two binary numbers a and b
+    # Convert a and b into binary representation
+    a_bin = format(a, "04b")
+    b_bin = format(b, "04b")
+    sum_bin = format(a + b, "04b")  # Expected sum in binary
+
+    # Print the binary representations for debugging
+    print("a in binary:", a_bin)
+    print("b in binary:", b_bin)
+    print("Expected sum in binary:", sum_bin)
+
     # Initialize the qubits based on the binary representation of the numbers
-    for i in range(m):  # m is 4, for the binary digits
+    for i in range(m):
         if a & (1 << i):
-            qc.x(i)  # Setting up the first number
+            qc.x(i)  # Set qubit for first number
         if b & (1 << i):
-            qc.x(m + i)  # Setting up the second number
+            qc.x(m + i)  # Set qubit for second number
 
-    # Addition logic using a series of CX and CCX gates to perform binary addition
-    # We'll use qubits q_0 to q_3 for 'a', q_4 to q_7 for 'b', and calculate into 'a'
-    for i in range(m - 1):
-        # Use an ancilla qubit for the carry (qubits q_4 to q_7)
-        qc.ccx(
-            i, m + i, m + i + 1
-        )  # Compute the carry from bits i and m+i, store in m+i+1
-        qc.cx(i, m + i)  # Compute the sum for bit i, store in m+i
-        qc.ccx(i, m + i, m + i + 1)  # Apply correction to carry if necessary
+    print("Initial Circuit:")
+    print(qc.draw())  # Print the circuit in its initial state
 
-    # Handle the last bit separately (no carry out needed)
-    qc.cx(m - 1, 2 * m - 1)  # Just compute the sum for the last bit
+    # Add using quantum gates, correcting for sum and carry
+    for i in range(m):
+        qc.cx(
+            i, m + i
+        )  # Apply CX gate for sum calculation, results stored in 'a' qubits
+        if i < m - 1:
+            qc.ccx(i, m + i, i + 1)  # Compute carry, store in next bit of 'a'
+
+    # Propagate final carries if any
+    for i in range(1, m):
+        qc.cx(m + i, i)
 
     qc.barrier()
-    # Measure only the bits that stored the result of the addition
-    qc.measure(range(m), range(m))  # Output the result in the first 4 classical bits
+    qc.measure(
+        range(m), range(m)
+    )  # Measure the lower half where the results are expected to be
+
+    print("Final Circuit after addition:")
+    print(qc.draw())  # Print the circuit after addition
+
     return qc
 
 

@@ -32,49 +32,45 @@ def plot_histogram(counts, title="Histogram", figsize=(7, 5)):
 
 
 def prepare_circuit(a, b):
-    n = 8  # Total number of qubits required
-    m = 4  # Number of bits in each number
-    qc = QuantumCircuit(n, m)  # 8 qubits, 4 classical bits
+    n = 8  # 8 qubits in total
+    m = 4  # We're only handling 4-bit numbers
+    qc = QuantumCircuit(
+        n, m
+    )  # Circuit with 8 qubits and 4 classical bits to store results
 
-    # Convert a and b into binary representation
+    # Binary representations for debugging
     a_bin = format(a, "04b")
     b_bin = format(b, "04b")
-    sum_bin = format(a + b, "04b")  # Expected sum in binary
+    sum_bin = format(a + b, "04b")
 
-    # Print the binary representations for debugging
     print("a in binary:", a_bin)
     print("b in binary:", b_bin)
     print("Expected sum in binary:", sum_bin)
 
-    # Initialize the qubits based on the binary representation of the numbers
+    # Set initial states based on binary inputs
     for i in range(m):
         if a & (1 << i):
-            qc.x(i)  # Set qubit for first number
+            qc.x(i)
         if b & (1 << i):
-            qc.x(m + i)  # Set qubit for second number
+            qc.x(m + i)
 
     print("Initial Circuit:")
-    print(qc.draw())  # Print the circuit in its initial state
+    print(qc.draw())
 
-    # Add using quantum gates, correcting for sum and carry
+    # Addition using quantum gates
     for i in range(m):
-        qc.cx(
-            i, m + i
-        )  # Apply CX gate for sum calculation, results stored in 'a' qubits
-        if i < m - 1:
-            qc.ccx(i, m + i, i + 1)  # Compute carry, store in next bit of 'a'
+        qc.cx(i, m + i)
+        if i < m - 1:  # Propagate carry if not the last bit
+            qc.ccx(i, m + i, i + 1)
 
-    # Propagate final carries if any
-    for i in range(1, m):
-        qc.cx(m + i, i)
+    # Measure results into classical bits
+    for i in range(m):
+        qc.measure(m + i, i)  # Measure the result of addition into classical bits
 
     qc.barrier()
-    qc.measure(
-        range(m), range(m)
-    )  # Measure the lower half where the results are expected to be
 
     print("Final Circuit after addition:")
-    print(qc.draw())  # Print the circuit after addition
+    print(qc.draw())
 
     return qc
 
@@ -99,7 +95,6 @@ def main():
     counts = get_counts(simulator, qc, shots=shots)
     print("Final counts:", counts)
     plot_histogram(counts, title=f"Result_of_Adding_{args.num1}_and_{args.num2}")
-    print(qc.draw())
 
 
 if __name__ == "__main__":

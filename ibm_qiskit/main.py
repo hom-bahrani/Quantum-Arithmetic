@@ -32,11 +32,11 @@ def plot_histogram(counts, title="Histogram", figsize=(7, 5)):
 
 
 def prepare_circuit(a, b):
-    """Prepare a quantum circuit to add two binary numbers a and b."""
     n = 8  # Total number of qubits required
     m = 4  # Number of bits in each number
     qc = QuantumCircuit(n, m)  # 8 qubits, 4 classical bits
 
+    # Prepare the quantum circuit to add two binary numbers a and b
     # Initialize the qubits based on the binary representation of the numbers
     for i in range(m):  # m is 4, for the binary digits
         if a & (1 << i):
@@ -44,16 +44,22 @@ def prepare_circuit(a, b):
         if b & (1 << i):
             qc.x(m + i)  # Setting up the second number
 
-    # Add the numbers using quantum gates
-    # Assuming adding logic here with appropriate qubit referencing
-    qc.cx(0, 4)
-    for i in range(1, m):  # m - 1 because we are using 4 bits for each number
-        qc.ccx(i, m + i, i + 1)
-        qc.cx(i, m + i)
+    # Addition logic using a series of CX and CCX gates to perform binary addition
+    # We'll use qubits q_0 to q_3 for 'a', q_4 to q_7 for 'b', and calculate into 'a'
+    for i in range(m - 1):
+        # Use an ancilla qubit for the carry (qubits q_4 to q_7)
+        qc.ccx(
+            i, m + i, m + i + 1
+        )  # Compute the carry from bits i and m+i, store in m+i+1
+        qc.cx(i, m + i)  # Compute the sum for bit i, store in m+i
+        qc.ccx(i, m + i, m + i + 1)  # Apply correction to carry if necessary
+
+    # Handle the last bit separately (no carry out needed)
+    qc.cx(m - 1, 2 * m - 1)  # Just compute the sum for the last bit
 
     qc.barrier()
-    # Measuring only the first four qubits as they represent the sum
-    qc.measure(range(4), range(4))  # Output the result in the first 4 classical bits
+    # Measure only the bits that stored the result of the addition
+    qc.measure(range(m), range(m))  # Output the result in the first 4 classical bits
     return qc
 
 

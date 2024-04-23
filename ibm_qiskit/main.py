@@ -1,8 +1,7 @@
 import os
+import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-
-# Import Qiskit
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
 from qiskit.visualization import plot_histogram, plot_state_city
@@ -11,13 +10,13 @@ import qiskit.quantum_info as qi
 
 # Function Definitions
 def get_counts(simulator, circuit, shots=1000):
-    """Return the counts from running a circuit on the Aer"""
+    """Return the counts from running a circuit on the Aer."""
     job_statevector = simulator.run(circuit, shots=shots)
     counts = job_statevector.result().get_counts(0)
     return counts
 
 
-def plot_histogram(counts, title="histogram", figsize=(7, 5)):
+def plot_histogram(counts, title="Histogram", figsize=(7, 5)):
     """Plot a histogram of data from a counts dictionary."""
     if not os.path.exists("results"):
         os.makedirs("results")
@@ -32,26 +31,51 @@ def plot_histogram(counts, title="histogram", figsize=(7, 5)):
     plt.close()
 
 
-shots = 10000
-simulator = AerSimulator(method="statevector")
+def prepare_circuit(a, b):
+    """Prepare a quantum circuit to add two binary numbers a and b."""
+    n = 4  # number of qubits
+    qc = QuantumCircuit(n, n)  # create a circuit with 4 qubits and 4 classical bits
 
-# Create a Quantum Circuit acting on a quantum register of four qubits
-qc = QuantumCircuit(4)
+    # Initialize the qubits based on the binary representation of the numbers
+    for i in range(n):
+        if a & (1 << i):
+            qc.x(i)
+        if b & (1 << i):
+            qc.x(n + i)
 
-# Initialize the state to binary number 1 (0001)
-qc.x(0)  # Apply X gate to the least significant qubit
+    # Add the numbers using quantum gates
+    qc.cx(0, 4)
+    for i in range(1, n):
+        qc.ccx(i, n + i, i + 1)
+        qc.cx(i, n + i)
 
-# Add the binary number 2 (0010) to it
-qc.cx(0, 1)  # Flip the second least significant qubit if the first qubit is 1
-qc.x(0)  # Reset the first qubit back to 0
+    qc.barrier()
+    qc.measure(range(n), range(n))
+    return qc
 
-# Add a barrier to prevent optimization changes
-qc.barrier()
 
-# Map the quantum measurement to the classical bits
-qc.measure_all()
+def main():
+    parser = argparse.ArgumentParser(
+        description="Add two numbers using a quantum circuit."
+    )
+    parser.add_argument("num1", type=int, help="First number to add.")
+    parser.add_argument("num2", type=int, help="Second number to add.")
+    args = parser.parse_args()
 
-counts = get_counts(simulator, qc, shots=shots)
-print("Final counts:", counts)
-plot_histogram(counts, title="Bell_state_counts_finish")
-print(qc.draw())
+    # Check if the sum of the numbers is within the allowed range
+    if args.num1 + args.num2 > 15:
+        raise ValueError("The sum of the numbers must not exceed 15.")
+
+    shots = 10000
+    simulator = AerSimulator(method="statevector")
+
+    # Create and run the quantum circuit
+    qc = prepare_circuit(args.num1, args.num2)
+    counts = get_counts(simulator, qc, shots=shots)
+    print("Final counts:", counts)
+    plot_histogram(counts, title=f"Result_of_Adding_{args.num1}_and_{args.num2}")
+    print(qc.draw())
+
+
+if __name__ == "__main__":
+    main()

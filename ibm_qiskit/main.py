@@ -1,8 +1,9 @@
 import os
+import math
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-from qiskit import QuantumCircuit, transpile
+from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, transpile
 from qiskit_aer import AerSimulator
 from qiskit.visualization import plot_histogram, plot_state_city
 import qiskit.quantum_info as qi
@@ -32,44 +33,44 @@ def plot_histogram(counts, title="Histogram", figsize=(7, 5)):
 
 
 def prepare_circuit(a, b):
-    n = 8  # 8 qubits in total
-    m = 4  # We're only handling 4-bit numbers
-    qc = QuantumCircuit(
-        n, m
-    )  # Circuit with 8 qubits and 4 classical bits to store results
+    # We'll use 4 qubits for each number and an additional qubit for carry
+    num_qubits = 4
+    carry = QuantumRegister(1, name="carry")
+    a_reg = QuantumRegister(num_qubits, name="a")
+    b_reg = QuantumRegister(num_qubits, name="b")
+    aux = QuantumRegister(1, name="aux")  # Auxiliary qubit for complex operations
+    c_reg = ClassicalRegister(num_qubits, name="c")  # To store the measurement results
+    qc = QuantumCircuit(a_reg, b_reg, carry, aux, c_reg)
 
-    # Binary representations for debugging
-    a_bin = format(a, "04b")
-    b_bin = format(b, "04b")
-    sum_bin = format(a + b, "04b")
+    # Initialize the quantum circuit with binary values of a and b
+    a_bin = format(a, "04b")[::-1]  # Reverse to match LSB to MSB
+    b_bin = format(b, "04b")[::-1]
 
-    print("a in binary:", a_bin)
-    print("b in binary:", b_bin)
-    print("Expected sum in binary:", sum_bin)
+    # Set qubits based on binary input
+    for i in range(num_qubits):
+        if a_bin[i] == "1":
+            qc.x(a_reg[i])
+        if b_bin[i] == "1":
+            qc.x(b_reg[i])
 
-    # Set initial states based on binary inputs
-    for i in range(m):
-        if a & (1 << i):
-            qc.x(i)
-        if b & (1 << i):
-            qc.x(m + i)
+    # Addition logic using quantum gates
+    for i in range(num_qubits - 1):
+        qc.cx(a_reg[i], b_reg[i])
+        qc.ccx(a_reg[i], b_reg[i], carry[0])
+        if i < num_qubits - 1:
+            qc.ccx(carry[0], b_reg[i + 1], aux[0])  # Use auxiliary qubit
+            qc.cx(aux[0], b_reg[i + 1])
+        qc.cx(carry[0], a_reg[i + 1])
+
+    # Last bit addition
+    qc.cx(a_reg[num_qubits - 1], b_reg[num_qubits - 1])
+    qc.ccx(a_reg[num_qubits - 1], b_reg[num_qubits - 1], carry[0])
+
+    # Measure the result
+    for i in range(num_qubits):
+        qc.measure(b_reg[i], c_reg[i])
 
     print("Initial Circuit:")
-    print(qc.draw())
-
-    # Addition using quantum gates
-    for i in range(m):
-        qc.cx(i, m + i)
-        if i < m - 1:  # Propagate carry if not the last bit
-            qc.ccx(i, m + i, i + 1)
-
-    # Measure results into classical bits
-    for i in range(m):
-        qc.measure(m + i, i)  # Measure the result of addition into classical bits
-
-    qc.barrier()
-
-    print("Final Circuit after addition:")
     print(qc.draw())
 
     return qc

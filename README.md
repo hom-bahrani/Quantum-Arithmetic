@@ -19,3 +19,15 @@ source venv/bin/activate
 
 pip install -r requirements.txt
 ```
+
+## Run code
+
+```bash
+cd Quantum-Arithmetic-
+```
+
+Pass in the numbers to add as command line arguments
+
+```bash
+python3 ibm_qiskit/main.py 2 1
+```

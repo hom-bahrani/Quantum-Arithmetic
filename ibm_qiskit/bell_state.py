@@ -40,6 +40,7 @@ circ = QuantumCircuit(2)
 circ.measure_all()
 
 counts = get_counts(simulator, circ, shots=shots)
+print("Initial counts:", counts)
 plot_histogram(counts, title="Bell_state_counts_start")
 
 # With Bell state
@@ -49,4 +50,5 @@ circ.cx(0, 1)
 circ.measure_all()
 
 counts = get_counts(simulator, circ, shots=shots)
+print("Final counts:", counts)
 plot_histogram(counts, title="Bell_state_counts_finish")
